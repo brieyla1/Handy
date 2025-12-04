@@ -292,6 +292,8 @@ pub struct AppSettings {
     pub post_process_selected_prompt_id: Option<String>,
     #[serde(default)]
     pub mute_while_recording: bool,
+    #[serde(default)]
+    pub append_trailing_space: bool,
 }
 
 fn default_model() -> String {
@@ -492,6 +494,7 @@ pub fn get_default_settings() -> AppSettings {
         post_process_prompts: default_post_process_prompts(),
         post_process_selected_prompt_id: None,
         mute_while_recording: false,
+        append_trailing_space: false,
     }
 }
 
