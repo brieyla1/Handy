@@ -11,9 +11,9 @@ fn build_apple_intelligence_bridge() {
     use std::path::{Path, PathBuf};
     use std::process::Command;
 
-    const REAL_SWIFT_FILE: &str = "apple_intelligence.swift";
-    const STUB_SWIFT_FILE: &str = "apple_intelligence_stub.swift";
-    const BRIDGE_HEADER: &str = "apple_intelligence_bridge.h";
+    const REAL_SWIFT_FILE: &str = "swift/apple_intelligence.swift";
+    const STUB_SWIFT_FILE: &str = "swift/apple_intelligence_stub.swift";
+    const BRIDGE_HEADER: &str = "swift/apple_intelligence_bridge.h";
 
     println!("cargo:rerun-if-changed={REAL_SWIFT_FILE}");
     println!("cargo:rerun-if-changed={STUB_SWIFT_FILE}");
@@ -35,8 +35,8 @@ fn build_apple_intelligence_bridge() {
     .to_string();
 
     // Check if the SDK supports FoundationModels (required for Apple Intelligence)
-    let framework_path = Path::new(&sdk_path)
-        .join("System/Library/Frameworks/FoundationModels.framework");
+    let framework_path =
+        Path::new(&sdk_path).join("System/Library/Frameworks/FoundationModels.framework");
     let has_foundation_models = framework_path.exists();
 
     let source_file = if has_foundation_models {
@@ -69,11 +69,14 @@ fn build_apple_intelligence_bridge() {
         .expect("Unable to determine Swift toolchain lib directory");
     let sdk_swift_lib = Path::new(&sdk_path).join("usr/lib/swift");
 
+    // Use macOS 11.0 as deployment target for compatibility
+    // The @available(macOS 26.0, *) checks in Swift handle runtime availability
+    // Weak linking for FoundationModels is handled via cargo:rustc-link-arg below
     let status = Command::new("xcrun")
         .args([
             "swiftc",
             "-target",
-            "arm64-apple-macosx15.0",
+            "arm64-apple-macosx11.0",
             "-sdk",
             &sdk_path,
             "-O",
@@ -121,7 +124,9 @@ fn build_apple_intelligence_bridge() {
     println!("cargo:rustc-link-lib=framework=Foundation");
 
     if has_foundation_models {
-        println!("cargo:rustc-link-lib=framework=FoundationModels");
+        // Use weak linking so the app can launch on systems without FoundationModels
+        println!("cargo:rustc-link-arg=-weak_framework");
+        println!("cargo:rustc-link-arg=FoundationModels");
     }
 
     println!("cargo:rustc-link-arg=-Wl,-rpath,/usr/lib/swift");

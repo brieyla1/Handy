@@ -365,6 +365,7 @@ pub fn change_paste_method_setting(app: AppHandle, method: String) -> Result<(),
         "direct" => PasteMethod::Direct,
         "none" => PasteMethod::None,
         "shift_insert" => PasteMethod::ShiftInsert,
+        "ctrl_shift_v" => PasteMethod::CtrlShiftV,
         other => {
             warn!("Invalid paste method '{other}', defaulting to ctrl_v");
             PasteMethod::CtrlV
@@ -572,6 +573,18 @@ pub async fn fetch_post_process_models(
         .iter()
         .find(|p| p.id == provider_id)
         .ok_or_else(|| format!("Provider '{provider_id}' not found"))?;
+
+    if provider.id == APPLE_INTELLIGENCE_PROVIDER_ID {
+        #[cfg(all(target_os = "macos", target_arch = "aarch64"))]
+        {
+            return Ok(vec![APPLE_INTELLIGENCE_DEFAULT_MODEL_ID.to_string()]);
+        }
+
+        #[cfg(not(all(target_os = "macos", target_arch = "aarch64")))]
+        {
+            return Err("Apple Intelligence is only available on Apple silicon Macs running macOS 15 or later.".to_string());
+        }
+    }
 
     if provider.id == APPLE_INTELLIGENCE_PROVIDER_ID {
         #[cfg(all(target_os = "macos", target_arch = "aarch64"))]
