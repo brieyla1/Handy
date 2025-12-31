@@ -102,10 +102,6 @@ pub struct PostProcessProvider {
     pub id: String,
     pub label: String,
     pub base_url: String,
-    #[serde(default)]
-    pub allow_base_url_edit: bool,
-    #[serde(default)]
-    pub models_endpoint: Option<String>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, Copy, PartialEq, Eq, Type)]
@@ -298,6 +294,8 @@ pub struct AppSettings {
     pub mute_while_recording: bool,
     #[serde(default)]
     pub append_trailing_space: bool,
+    #[serde(default = "default_app_language")]
+    pub app_language: String,
 }
 
 fn default_model() -> String {
@@ -367,6 +365,12 @@ fn default_post_process_enabled() -> bool {
     false
 }
 
+fn default_app_language() -> String {
+    tauri_plugin_os::locale()
+        .and_then(|l| l.split(['-', '_']).next().map(String::from))
+        .unwrap_or_else(|| "en".to_string())
+}
+
 fn default_post_process_provider_id() -> String {
     "openai".to_string()
 }
@@ -377,29 +381,31 @@ fn default_post_process_providers() -> Vec<PostProcessProvider> {
             id: "openai".to_string(),
             label: "OpenAI".to_string(),
             base_url: "https://api.openai.com/v1".to_string(),
-            allow_base_url_edit: false,
-            models_endpoint: Some("/models".to_string()),
         },
         PostProcessProvider {
             id: "openrouter".to_string(),
             label: "OpenRouter".to_string(),
             base_url: "https://openrouter.ai/api/v1".to_string(),
-            allow_base_url_edit: false,
-            models_endpoint: Some("/models".to_string()),
         },
         PostProcessProvider {
             id: "anthropic".to_string(),
             label: "Anthropic".to_string(),
             base_url: "https://api.anthropic.com/v1".to_string(),
-            allow_base_url_edit: false,
-            models_endpoint: Some("/models".to_string()),
+        },
+        PostProcessProvider {
+            id: "groq".to_string(),
+            label: "Groq".to_string(),
+            base_url: "https://api.groq.com/openai/v1".to_string(),
+        },
+        PostProcessProvider {
+            id: "cerebras".to_string(),
+            label: "Cerebras".to_string(),
+            base_url: "https://api.cerebras.ai/v1".to_string(),
         },
         PostProcessProvider {
             id: "custom".to_string(),
             label: "Custom".to_string(),
             base_url: "http://localhost:11434/v1".to_string(),
-            allow_base_url_edit: true,
-            models_endpoint: Some("/models".to_string()),
         },
     ];
 
@@ -410,8 +416,6 @@ fn default_post_process_providers() -> Vec<PostProcessProvider> {
                 id: APPLE_INTELLIGENCE_PROVIDER_ID.to_string(),
                 label: "Apple Intelligence".to_string(),
                 base_url: "apple-intelligence://local".to_string(),
-                allow_base_url_edit: false,
-                models_endpoint: None,
             });
         }
     }
@@ -563,6 +567,7 @@ pub fn get_default_settings() -> AppSettings {
         post_process_selected_prompt_id: None,
         mute_while_recording: false,
         append_trailing_space: false,
+        app_language: default_app_language(),
     }
 }
 

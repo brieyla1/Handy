@@ -1,4 +1,5 @@
 use crate::managers::audio::AudioRecordingManager;
+use crate::managers::transcription::TranscriptionManager;
 use crate::ManagedToggleState;
 use log::{info, warn};
 use std::sync::Arc;
@@ -43,6 +44,10 @@ pub fn cancel_current_operation(app: &AppHandle) {
 
     // Update tray icon to idle state
     change_tray_icon(app, TrayIconState::Idle);
+
+    // Unload model if immediate unload is enabled
+    let tm = app.state::<Arc<TranscriptionManager>>();
+    tm.maybe_unload_immediately("cancellation");
 
     info!("Operation cancellation completed - returned to idle state");
 }
