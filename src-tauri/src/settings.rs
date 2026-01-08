@@ -230,6 +230,27 @@ impl SoundTheme {
     }
 }
 
+#[derive(Serialize, Deserialize, Debug, Clone, Copy, PartialEq, Eq, Type, Default)]
+#[serde(rename_all = "snake_case")]
+pub enum AccentTheme {
+    #[default]
+    Pink,
+    Blue,
+    Green,
+    Purple,
+    Orange,
+    Teal,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone, Copy, PartialEq, Eq, Type, Default)]
+#[serde(rename_all = "snake_case")]
+pub enum OverlayTheme {
+    #[default]
+    Pill,
+    Minimal,
+    Glassmorphism,
+}
+
 /* still handy for composing the initial JSON in the store ------------- */
 #[derive(Serialize, Deserialize, Debug, Clone, Type)]
 pub struct AppSettings {
@@ -300,6 +321,20 @@ pub struct AppSettings {
     pub append_trailing_space: bool,
     #[serde(default = "default_app_language")]
     pub app_language: String,
+    #[serde(default)]
+    pub accent_theme: AccentTheme,
+    #[serde(default)]
+    pub overlay_theme: OverlayTheme,
+    #[serde(default = "default_overlay_show_icons")]
+    pub overlay_show_icons: bool,
+    #[serde(default = "default_overlay_bars_centered")]
+    pub overlay_bars_centered: bool,
+    #[serde(default = "default_overlay_bar_count")]
+    pub overlay_bar_count: u32,
+    #[serde(default = "default_overlay_bar_size")]
+    pub overlay_bar_size: u32,
+    #[serde(default = "default_overlay_bar_color")]
+    pub overlay_bar_color: String,
 }
 
 fn default_model() -> String {
@@ -373,6 +408,26 @@ fn default_app_language() -> String {
     tauri_plugin_os::locale()
         .and_then(|l| l.split(['-', '_']).next().map(String::from))
         .unwrap_or_else(|| "en".to_string())
+}
+
+fn default_overlay_show_icons() -> bool {
+    true
+}
+
+fn default_overlay_bars_centered() -> bool {
+    false
+}
+
+fn default_overlay_bar_count() -> u32 {
+    9
+}
+
+fn default_overlay_bar_size() -> u32 {
+    6 // bar width in pixels
+}
+
+fn default_overlay_bar_color() -> String {
+    "accent".to_string() // "accent" uses theme color, or can be a hex color like "#ff0000"
 }
 
 fn default_post_process_provider_id() -> String {
@@ -590,6 +645,13 @@ pub fn get_default_settings() -> AppSettings {
         mute_while_recording: false,
         append_trailing_space: false,
         app_language: default_app_language(),
+        accent_theme: AccentTheme::default(),
+        overlay_theme: OverlayTheme::default(),
+        overlay_show_icons: default_overlay_show_icons(),
+        overlay_bars_centered: default_overlay_bars_centered(),
+        overlay_bar_count: default_overlay_bar_count(),
+        overlay_bar_size: default_overlay_bar_size(),
+        overlay_bar_color: default_overlay_bar_color(),
     }
 }
 

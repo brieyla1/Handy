@@ -10,8 +10,8 @@ use crate::actions::ACTION_MAP;
 use crate::managers::audio::AudioRecordingManager;
 use crate::settings::ShortcutBinding;
 use crate::settings::{
-    self, get_settings, ClipboardHandling, LLMPrompt, OverlayPosition, PasteMethod, SoundTheme,
-    APPLE_INTELLIGENCE_DEFAULT_MODEL_ID, APPLE_INTELLIGENCE_PROVIDER_ID,
+    self, get_settings, AccentTheme, ClipboardHandling, LLMPrompt, OverlayPosition, OverlayTheme,
+    PasteMethod, SoundTheme, APPLE_INTELLIGENCE_DEFAULT_MODEL_ID, APPLE_INTELLIGENCE_PROVIDER_ID,
 };
 use crate::tray;
 use crate::ManagedToggleState;
@@ -663,6 +663,136 @@ pub fn change_app_language_setting(app: AppHandle, language: String) -> Result<(
 
     // Refresh the tray menu with the new language
     tray::update_tray_menu(&app, &tray::TrayIconState::Idle, Some(&language));
+
+    Ok(())
+}
+
+#[tauri::command]
+#[specta::specta]
+pub fn change_accent_theme_setting(app: AppHandle, theme: String) -> Result<(), String> {
+    let mut settings = settings::get_settings(&app);
+    let parsed = match theme.as_str() {
+        "pink" => AccentTheme::Pink,
+        "blue" => AccentTheme::Blue,
+        "green" => AccentTheme::Green,
+        "purple" => AccentTheme::Purple,
+        "orange" => AccentTheme::Orange,
+        "teal" => AccentTheme::Teal,
+        other => {
+            warn!("Invalid accent theme '{}', defaulting to pink", other);
+            AccentTheme::Pink
+        }
+    };
+    settings.accent_theme = parsed;
+    settings::write_settings(&app, settings);
+
+    // Emit event to notify overlay of theme change
+    if let Some(overlay_window) = app.get_webview_window("recording_overlay") {
+        let _ = overlay_window.emit("theme-changed", theme);
+    }
+
+    Ok(())
+}
+
+#[tauri::command]
+#[specta::specta]
+pub fn change_overlay_theme_setting(app: AppHandle, theme: String) -> Result<(), String> {
+    let mut settings = settings::get_settings(&app);
+    let parsed = match theme.as_str() {
+        "pill" => OverlayTheme::Pill,
+        "minimal" => OverlayTheme::Minimal,
+        "glassmorphism" => OverlayTheme::Glassmorphism,
+        other => {
+            warn!("Invalid overlay theme '{}', defaulting to pill", other);
+            OverlayTheme::Pill
+        }
+    };
+    settings.overlay_theme = parsed;
+    settings::write_settings(&app, settings);
+
+    // Emit event to notify overlay of theme change
+    if let Some(overlay_window) = app.get_webview_window("recording_overlay") {
+        let _ = overlay_window.emit("overlay-theme-changed", theme);
+    }
+
+    Ok(())
+}
+
+#[tauri::command]
+#[specta::specta]
+pub fn change_overlay_show_icons_setting(app: AppHandle, show_icons: bool) -> Result<(), String> {
+    let mut settings = settings::get_settings(&app);
+    settings.overlay_show_icons = show_icons;
+    settings::write_settings(&app, settings);
+
+    // Emit event to notify overlay of icon visibility change
+    if let Some(overlay_window) = app.get_webview_window("recording_overlay") {
+        let _ = overlay_window.emit("overlay-show-icons-changed", show_icons);
+    }
+
+    Ok(())
+}
+
+#[tauri::command]
+#[specta::specta]
+pub fn change_overlay_bars_centered_setting(app: AppHandle, centered: bool) -> Result<(), String> {
+    let mut settings = settings::get_settings(&app);
+    settings.overlay_bars_centered = centered;
+    settings::write_settings(&app, settings);
+
+    // Emit event to notify overlay
+    if let Some(overlay_window) = app.get_webview_window("recording_overlay") {
+        let _ = overlay_window.emit("overlay-bars-centered-changed", centered);
+    }
+
+    Ok(())
+}
+
+#[tauri::command]
+#[specta::specta]
+pub fn change_overlay_bar_count_setting(app: AppHandle, count: u32) -> Result<(), String> {
+    let mut settings = settings::get_settings(&app);
+    // Clamp to reasonable range (1-20)
+    let clamped_count = count.clamp(1, 20);
+    settings.overlay_bar_count = clamped_count;
+    settings::write_settings(&app, settings);
+
+    // Emit event to notify overlay
+    if let Some(overlay_window) = app.get_webview_window("recording_overlay") {
+        let _ = overlay_window.emit("overlay-bar-count-changed", clamped_count);
+    }
+
+    Ok(())
+}
+
+#[tauri::command]
+#[specta::specta]
+pub fn change_overlay_bar_size_setting(app: AppHandle, size: u32) -> Result<(), String> {
+    let mut settings = settings::get_settings(&app);
+    // Clamp to reasonable range (2-12)
+    let clamped_size = size.clamp(2, 12);
+    settings.overlay_bar_size = clamped_size;
+    settings::write_settings(&app, settings);
+
+    // Emit event to notify overlay
+    if let Some(overlay_window) = app.get_webview_window("recording_overlay") {
+        let _ = overlay_window.emit("overlay-bar-size-changed", clamped_size);
+    }
+
+    Ok(())
+}
+
+#[tauri::command]
+#[specta::specta]
+pub fn change_overlay_bar_color_setting(app: AppHandle, color: String) -> Result<(), String> {
+    let mut settings = settings::get_settings(&app);
+    settings.overlay_bar_color = color.clone();
+    settings::write_settings(&app, settings);
+
+    // Emit event to notify overlay
+    if let Some(overlay_window) = app.get_webview_window("recording_overlay") {
+        let _ = overlay_window.emit("overlay-bar-color-changed", color);
+    }
 
     Ok(())
 }
